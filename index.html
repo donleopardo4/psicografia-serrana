@@ -968,6 +968,16 @@
           }
         } else {
           estado.textContent = "Una zona de luz";
+
+          // Si el audio ya está sonando, no lo cortamos por un salto de GPS.
+          // En interiores la ubicación puede oscilar algunos metros.
+          if (!audioActual.paused) {
+            botonEscuchar.style.display = "block";
+            botonEscuchar.classList.add("reproduciendo");
+            botonEscuchar.textContent = "escuchando";
+            return;
+          }
+
           botonEscuchar.style.display = "none";
           audioActual.pause();
           audioActual.currentTime = 0;
@@ -1025,11 +1035,25 @@
       });
     });
 
-    botonEscuchar.addEventListener("click", () => {
-      audioActual.play();
-      botonEscuchar.classList.remove("escuchado");
-      botonEscuchar.classList.add("reproduciendo");
-      botonEscuchar.textContent = "escuchando";
+    botonEscuchar.addEventListener("click", async () => {
+      if (!relatoActivo) return;
+
+      try {
+        audioActual.pause();
+        audioActual.src = relatoActivo.audio;
+        audioActual.currentTime = 0;
+        audioActual.load();
+
+        await audioActual.play();
+
+        botonEscuchar.classList.remove("escuchado");
+        botonEscuchar.classList.add("reproduciendo");
+        botonEscuchar.textContent = "escuchando";
+      } catch (error) {
+        console.error("Error al reproducir audio:", error);
+        botonEscuchar.classList.remove("reproduciendo");
+        botonEscuchar.textContent = "Tocar de nuevo";
+      }
     });
 
     audioActual.addEventListener("ended", () => {
